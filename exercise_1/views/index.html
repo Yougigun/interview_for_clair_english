@@ -53,7 +53,7 @@
             z-index: 1000;
             background-color: #fff;
             overflow-y: auto;
-            max-height: 200px;
+            /* max-height: 200px; */
             display: none;
             /* Initially hidden */
         }
@@ -71,6 +71,11 @@
         .suggestion-item:hover {
             background-color: #f0f0f0;
         }
+
+        .highlighted {
+            background-color: #f0f0f0;
+            /* Change as needed */
+        }
     </style>
 </head>
 
@@ -85,6 +90,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const typeaheadInput = document.getElementById('typeahead');
             const suggestionsContainer = document.getElementById('suggestions');
+            let currentIndex = -1; // Index of the currently highlighted suggestion
 
             // Function to fetch states from the server
             async function fetchStates() {
@@ -93,42 +99,82 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const states = await response.json();
-                console.log('States:', states);
                 return states;
             }
             const states = await fetchStates();
+
             // Function to display suggestions
-            async function displaySuggestions(inputText) {
-
+            function displaySuggestions(inputText) {
                 suggestionsContainer.innerHTML = ''; // Clear previous suggestions
-                if (inputText.length > 0) {
-                    const filteredSuggestions = states.filter(state =>
-                        state.name.toLowerCase().startsWith(inputText)
-                    ).slice(0, 8);
+                currentIndex = -1; // Reset highlighted suggestion index
+                let filteredSuggestions = [];
 
-                    if (filteredSuggestions.length > 0) {
-                        suggestionsContainer.style.display = 'block';
-                        filteredSuggestions.forEach(state => {
-                            const div = document.createElement('div');
-                            div.textContent = state.name;
-                            div.className = 'suggestion-item';
-                            div.addEventListener('click', () => {
-                                typeaheadInput.value = state.name;
-                                suggestionsContainer.style.display = 'none';
-                            });
-                            suggestionsContainer.appendChild(div);
+                if (inputText.length === 0) {
+                    filteredSuggestions = states
+                        .sort((a, b) => a.name.localeCompare(b.name)) // Alphabetical sorting
+                        .slice(0, 8);
+                } else {
+                    filteredSuggestions = states
+                        .filter(state => state.name.toLowerCase().includes(inputText))
+                        .sort((a, b) => a.name.localeCompare(b.name)) // Alphabetical sorting
+                        .slice(0, 8);
+                }
+
+                if (filteredSuggestions.length > 0) {
+                    suggestionsContainer.style.display = 'block';
+                    filteredSuggestions.forEach((state, index) => {
+                        const div = document.createElement('div');
+                        div.textContent = state.name;
+                        div.className = 'suggestion-item';
+                        div.addEventListener('click', () => {
+                            typeaheadInput.value = state.name;
+                            suggestionsContainer.style.display = 'none';
                         });
-                    } else {
-                        suggestionsContainer.style.display = 'none';
-                    }
+                        suggestionsContainer.appendChild(div);
+                    });
                 } else {
                     suggestionsContainer.style.display = 'none';
                 }
             }
 
+            // Keyboard navigation
+            typeaheadInput.addEventListener('keydown', (event) => {
+                const items = suggestionsContainer.getElementsByClassName('suggestion-item');
+                if (event.key === 'ArrowDown') {
+                    currentIndex = (currentIndex + 1) % items.length;
+                    highlightItem(items);
+                    event.preventDefault(); // Prevent cursor from moving to the end of input
+                } else if (event.key === 'ArrowUp') {
+                    currentIndex = (currentIndex - 1 + items.length) % items.length;
+                    highlightItem(items);
+                    event.preventDefault(); // Prevent cursor from moving to the start of input
+                } else if (event.key === 'Enter' && currentIndex >= 0) {
+                    typeaheadInput.value = items[currentIndex].textContent;
+                    suggestionsContainer.style.display = 'none';
+                    suggestionsContainer.innerHTML = ''
+                    event.preventDefault(); // Prevent form submission
+                }
+            });
+
+            function highlightItem(items) {
+                // First, remove highlight from all items
+                Array.from(items).forEach(item => {
+                    item.classList.remove('highlighted');
+                });
+                // Then, add highlight to the selected item
+                if (items[currentIndex]) {
+                    items[currentIndex].classList.add('highlighted');
+                    typeaheadInput.value = items[currentIndex].textContent; // Optional: update input on highlight
+                }
+            }
+
             // Listen for input event on the typeahead
             typeaheadInput.addEventListener('input', () => {
-                displaySuggestions(typeaheadInput.value.toLowerCase()).catch(error => console.error('Fetching states failed:', error));
+                displaySuggestions(typeaheadInput.value.toLowerCase());
+            });
+
+            typeaheadInput.addEventListener('click', () => {
+                displaySuggestions(typeaheadInput.value.toLowerCase());
             });
 
             // Hide suggestions when clicking outside
@@ -138,6 +184,7 @@
                 }
             });
         });
+
     </script>
 
 </body>

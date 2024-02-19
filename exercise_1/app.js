@@ -6,7 +6,7 @@ const path = require('path');
 const port = 3000;
 
 // APIs
-router.get('/states', (req, res) => {
+app.get('/states', (req, res) => {
     const states = [
         { name: 'Alabama', abbreviation: 'AL' },
         { name: 'Alaska', abbreviation: 'AK' },
@@ -68,10 +68,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
-// Route for the states data API
-app.get('/states', (req, res) => {
-    res.json(states); // This sends the states array as JSON
-});
 
 // Start the server
 app.listen(port, () => {

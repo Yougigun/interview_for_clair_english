@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding assignment - Typeahead</title>
+    <style>
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+
+        .centered-content {
+            display: inline-block;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .typeahead {
+            width: 500px;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .typeahead:focus,
+        .typeahead:hover {
+            border-color: #007bff;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            border: 1px solid #ccc;
+            border-top: none;
+            z-index: 1000;
+            background-color: #fff;
+            overflow-y: auto;
+            max-height: 200px;
+            display: none;
+            /* Initially hidden */
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="centered-content">
+        <h1>Coding Assignment - Typeahead</h1>
+        <input class="typeahead" type="text" id="typeahead" placeholder="Search for a state">
+        <div id="suggestions" class="suggestions"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const typeaheadInput = document.getElementById('typeahead');
+            const suggestionsContainer = document.getElementById('suggestions');
+
+            // Function to fetch states from the server
+            async function fetchStates() {
+                const response = await fetch('/states');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const states = await response.json();
+                console.log('States:', states);
+                return states;
+            }
+            const states = await fetchStates();
+            // Function to display suggestions
+            async function displaySuggestions(inputText) {
+
+                suggestionsContainer.innerHTML = ''; // Clear previous suggestions
+                if (inputText.length > 0) {
+                    const filteredSuggestions = states.filter(state =>
+                        state.name.toLowerCase().startsWith(inputText)
+                    ).slice(0, 8);
+
+                    if (filteredSuggestions.length > 0) {
+                        suggestionsContainer.style.display = 'block';
+                        filteredSuggestions.forEach(state => {
+                            const div = document.createElement('div');
+                            div.textContent = state.name;
+                            div.className = 'suggestion-item';
+                            div.addEventListener('click', () => {
+                                typeaheadInput.value = state.name;
+                                suggestionsContainer.style.display = 'none';
+                            });
+                            suggestionsContainer.appendChild(div);
+                        });
+                    } else {
+                        suggestionsContainer.style.display = 'none';
+                    }
+                } else {
+                    suggestionsContainer.style.display = 'none';
+                }
+            }
+
+            // Listen for input event on the typeahead
+            typeaheadInput.addEventListener('input', () => {
+                displaySuggestions(typeaheadInput.value.toLowerCase()).catch(error => console.error('Fetching states failed:', error));
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', (event) => {
+                if (!typeaheadInput.contains(event.target)) {
+                    suggestionsContainer.style.display = 'none';
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>

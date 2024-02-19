@@ -18,3 +18,15 @@ npm install
 cd exercise_2
 node app.js
 ```
+
+## Usage
+
+```bash
+POST https://interviewforclairenglish-production.up.railway.app/emails
+with JSON body:
+{
+  to: "myemail@example.com",
+  subject: "hi",
+  body: "Hello World!"
+}
+```

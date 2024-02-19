@@ -4,6 +4,8 @@
 
 install npm and node.js
 
+<https://nodejs.org/en/download>
+
 install the dependencies
 
 ```bash
